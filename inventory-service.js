@@ -1,14 +1,12 @@
 // inventory-service.js
-// Servicio "de inventario" que simula una dependencia real: a veces lenta, a veces falla.
-// El objetivo es mostrar cómo la observabilidad ayuda a detectar problemas que
-// vienen de un servicio del que dependés, no solo de tu propio código.
+
 
 const express = require('express');
 const client = require('prom-client');
 const pinoHttp = require('pino-http');
 
 const app = express();
-const PORT = 3002;
+const PORT = Number(process.env.INVENTORY_PORT || 3002);
 
 const register = new client.Registry();
 client.collectDefaultMetrics({ register, prefix: 'inventory_' });
@@ -23,11 +21,16 @@ const requestsTotal = new client.Counter({
 const requestDuration = new client.Histogram({
   name: 'inventory_request_duration_seconds',
   help: 'Duración de las requests del servicio de inventario',
+  labelNames: ['status_code'],
   buckets: [0.05, 0.1, 0.3, 0.5, 1, 2],
   registers: [register],
 });
 
 app.use(pinoHttp());
+
+app.get('/', (req, res) =>
+  res.json({ service: 'inventory-service', routes: { metrics: '/metrics', stock: '/stock/:productId' } })
+);
 
 app.get('/stock/:productId', (req, res) => {
   const end = requestDuration.startTimer();
@@ -56,4 +59,12 @@ app.get('/metrics', async (req, res) => {
   res.end(await register.metrics());
 });
 
-app.listen(PORT, () => console.log(`Inventory service en http://localhost:${PORT}`));
+function startInventoryService({ port = PORT } = {}) {
+  return app.listen(port, () => console.log(`Inventory service en http://localhost:${port}`));
+}
+
+if (require.main === module) {
+  startInventoryService();
+}
+
+module.exports = { startInventoryService };
