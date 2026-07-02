@@ -1,0 +1,37 @@
+version: '3.8'
+services:
+  products-api:
+    build: .
+    command: ["node", "server.js"]
+    ports:
+      - "3000:3000"
+    environment:
+      - INVENTORY_URL=http://inventory-service:3002
+    depends_on:
+      - inventory-service
+
+  inventory-service:
+    build: .
+    command: ["node", "inventory-service.js"]
+    ports:
+      - "3002:3002"
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./alert_rules.yml:/etc/prometheus/alert_rules.yml
+    depends_on:
+      - products-api
+      - inventory-service
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - prometheus

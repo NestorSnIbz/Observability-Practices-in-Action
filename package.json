@@ -1,0 +1,16 @@
+{
+  "name": "observability-demo",
+  "version": "1.0.0",
+  "description": "Demo de observabilidad con Node.js, Prometheus y Grafana",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "check": "node --check server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "prom-client": "^15.1.3",
+    "pino": "^9.0.0",
+    "pino-http": "^10.0.0"
+  }
+}

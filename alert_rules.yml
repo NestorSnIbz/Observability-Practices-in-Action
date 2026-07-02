@@ -1,0 +1,29 @@
+groups:
+  - name: products-api-alerts
+    rules:
+      - alert: LatenciaAltaP95
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job="products-api"}[5m])) > 1
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "El p95 de latencia de products-api superó 1 segundo por más de 2 minutos"
+
+      - alert: TasaDeErroresAlta
+        expr: |
+          sum(rate(http_requests_total{job="products-api",status_code=~"5.."}[5m]))
+          /
+          sum(rate(http_requests_total{job="products-api"}[5m])) > 0.1
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Más del 10% de las requests de products-api están fallando"
+
+      - alert: DependenciaInventarioFallando
+        expr: increase(inventory_call_failures_total[5m]) > 10
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "El servicio de inventario está fallando repetidamente en los últimos 5 minutos"
